@@ -8,15 +8,45 @@
 <h1>📷 Camera Monitoring</h1>
 
 <video id="video" width="500" autoplay></video>
+<br><br>
+<button onclick="capture()">Capture & Analyze</button>
+
+<canvas id="canvas" style="display:none;"></canvas>
 
 <script>
+const video = document.getElementById('video');
+
 navigator.mediaDevices.getUserMedia({ video: true })
 .then(stream => {
-    document.getElementById('video').srcObject = stream;
+    video.srcObject = stream;
 })
 .catch(err => {
     alert("Camera access denied!");
 });
+
+function capture() {
+    const canvas = document.getElementById('canvas');
+    const context = canvas.getContext('2d');
+
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+
+    context.drawImage(video, 0, 0);
+
+    const imageData = canvas.toDataURL('image/png');
+
+    fetch('/analyze', {
+        method: 'POST',
+        body: JSON.stringify({ image: imageData }),
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(res => res.json())
+    .then(data => {
+        alert("Result: " + data.result);
+    });
+}
 </script>
 
 </body>
