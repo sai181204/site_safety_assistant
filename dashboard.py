@@ -221,3 +221,18 @@ if __name__ == "__main__":
         debug=False,
         threaded=True,
     )
+app = Flask(__name__)
+
+@app.route("/")
+def home():
+    return "Smart Construction Safety System 🚧 Running"
+
+import os
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
+@app.route('/')
+def home():
+    return "Hello! The Smart Construction Safety System is running."
+@app.route('/')
+def home():
+    return "<h1>Smart Construction Safety System</h1><p>The server is running successfully!</p><a href='/dashboard'>Go to Dashboard</a>"
