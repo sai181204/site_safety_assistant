@@ -43,6 +43,17 @@ from pathlib import Path
 
 import cv2
 
+
+from flask import Flask
+import os
+
+app = Flask(__name__)
+
+@app.route("/")
+def home():
+    return "🚧 Smart Construction Safety System is Running!"
+
+
 # ── ensure project root is importable ────────────────────────────────────────
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
@@ -258,20 +269,5 @@ def main():
     # Default: inference loop
     run_inference_loop(args)
 
-
-if __name__ == "__main__":
-    main()
-from flask import Flask
-
-app = Flask(__name__)
-
-@app.route("/")
-def home():
-    return "Smart Construction Safety System 🚧 Running"
-
-import os
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
-@app.route('/')
-def home():
-    return "Hello! The Smart Construction Safety System is running."
