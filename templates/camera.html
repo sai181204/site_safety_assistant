@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Camera</title>
+</head>
+<body>
+
+<h1>📷 Camera Monitoring</h1>
+
+<video id="video" width="500" autoplay></video>
+
+<script>
+navigator.mediaDevices.getUserMedia({ video: true })
+.then(stream => {
+    document.getElementById('video').srcObject = stream;
+})
+.catch(err => {
+    alert("Camera access denied!");
+});
+</script>
+
+</body>
+</html>
