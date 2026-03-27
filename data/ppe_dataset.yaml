@@ -1,0 +1,45 @@
+# ppe_dataset.yaml
+# ─────────────────────────────────────────────────────────────────────────────
+# YOLOv8 dataset configuration for PPE detection.
+#
+# Dataset structure expected (relative to this YAML file):
+#
+# data/
+# ├── ppe_dataset.yaml        ← this file
+# ├── images/
+# │   ├── train/              ← training images (.jpg / .png)
+# │   └── val/                ← validation images
+# └── labels/
+#     ├── train/              ← YOLO format .txt label files
+#     └── val/
+#
+# Each label file has one detection per line:
+#   <class_id> <cx> <cy> <w> <h>   (all values normalised 0–1)
+#
+# Public PPE datasets to download:
+#   • Roboflow Universe — search "PPE detection"
+#     https://universe.roboflow.com/
+#   • Construction-PPE-Safety (5 classes, ~4 k images):
+#     https://universe.roboflow.com/ppe-detection-jlhau/construction-ppe-safety
+#   • Hard-Hat Workers dataset:
+#     https://www.kaggle.com/datasets/andrewmvd/hard-hat-detection
+#
+# After downloading, convert to YOLO format (Roboflow exports directly).
+# Place images under data/images/{train,val}/ and labels under data/labels/{train,val}/.
+# ─────────────────────────────────────────────────────────────────────────────
+
+path: C:\Users\Hello\Desktop\construction_safety\data           # root directory (absolute path)
+
+train: images/train
+val:   images/val
+
+# Number of classes
+nc: 5
+
+# Class names — must match the class IDs used during labelling
+names:
+  0: person
+  1: helmet
+  2: vest
+  3: no_helmet
+  4: no_vest

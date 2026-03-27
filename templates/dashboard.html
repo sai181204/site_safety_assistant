@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PPE Safety Monitor — Dashboard</title>
+  <style>
+    /* ── Reset & Variables ─────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:       #0a0c10;
+      --surface:  #121620;
+      --border:   #1e2535;
+      --text:     #c8d0e0;
+      --muted:    #5a6070;
+      --accent:   #00d4ff;
+      --green:    #00e676;
+      --amber:    #ffaa00;
+      --red:      #ff3d3d;
+      --font:     'Courier New', monospace;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font);
+      font-size: 13px;
+      min-height: 100vh;
+    }
+
+    /* ── Header ────────────────────────────────────────────────────── */
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 24px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+    }
+    header h1 {
+      font-size: 15px;
+      letter-spacing: 0.18em;
+      color: var(--accent);
+      text-transform: uppercase;
+    }
+    #status-dot {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 8px var(--green);
+      animation: pulse 1.6s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0.3; }
+    }
+
+    /* ── Layout ────────────────────────────────────────────────────── */
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 340px;
+      grid-template-rows: auto 1fr auto;
+      gap: 12px;
+      padding: 14px;
+      height: calc(100vh - 56px);
+    }
+
+    /* ── Video feed ────────────────────────────────────────────────── */
+    .video-wrap {
+      grid-row: 1 / 3;
+      background: #000;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      overflow: hidden;
+      position: relative;
+    }
+    .video-wrap img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      display: block;
+    }
+    .video-label {
+      position: absolute;
+      top: 8px; left: 8px;
+      background: rgba(0,0,0,0.6);
+      padding: 3px 8px;
+      border-radius: 3px;
+      font-size: 11px;
+      letter-spacing: 0.12em;
+      color: var(--accent);
+    }
+
+    /* ── KPI Cards ──────────────────────────────────────────────────── */
+    .kpi-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+    }
+    .kpi {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 12px 14px;
+    }
+    .kpi-label {
+      font-size: 10px;
+      color: var(--muted);
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+    .kpi-value {
+      font-size: 26px;
+      font-weight: bold;
+      color: var(--accent);
+    }
+    .kpi-value.good  { color: var(--green); }
+    .kpi-value.warn  { color: var(--amber); }
+    .kpi-value.bad   { color: var(--red);   }
+
+    /* ── Side panels ────────────────────────────────────────────────── */
+    .side {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      overflow-y: auto;
+    }
+
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 12px;
+    }
+    .panel-title {
+      font-size: 10px;
+      letter-spacing: 0.18em;
+      color: var(--muted);
+      text-transform: uppercase;
+      margin-bottom: 10px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 6px;
+    }
+
+    /* ── Violation table ───────────────────────────────────────────── */
+    #viol-list { min-height: 80px; }
+    .viol-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 12px;
+    }
+    .viol-row:last-child { border-bottom: none; }
+    .badge {
+      padding: 2px 7px;
+      border-radius: 3px;
+      font-size: 10px;
+      font-weight: bold;
+      letter-spacing: 0.1em;
+      flex-shrink: 0;
+    }
+    .badge.HIGH   { background: #3a0000; color: var(--red);   border: 1px solid var(--red); }
+    .badge.MEDIUM { background: #2a1800; color: var(--amber); border: 1px solid var(--amber); }
+    .badge.LOW    { background: #1a2000; color: #b0d000;      border: 1px solid #708000; }
+    .badge.OK     { background: #001a00; color: var(--green); border: 1px solid var(--green); }
+    .viol-worker  { color: var(--accent); width: 32px; flex-shrink: 0; }
+    .viol-type    { flex: 1; color: var(--text); }
+    .viol-dur     { color: var(--muted); width: 42px; text-align: right; flex-shrink: 0; }
+
+    /* ── Compliance gauge ──────────────────────────────────────────── */
+    #gauge-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 6px 0;
+    }
+    #gauge-value {
+      font-size: 36px;
+      font-weight: bold;
+      margin-bottom: 4px;
+    }
+    .gauge-bar-bg {
+      width: 100%;
+      height: 6px;
+      background: var(--border);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+    #gauge-bar {
+      height: 100%;
+      border-radius: 3px;
+      transition: width 0.5s, background 0.5s;
+    }
+
+    /* ── Log table ──────────────────────────────────────────────────── */
+    #log-list {
+      max-height: 200px;
+      overflow-y: auto;
+      font-size: 11px;
+    }
+    .log-row {
+      display: flex;
+      gap: 6px;
+      padding: 3px 0;
+      border-bottom: 1px solid var(--border);
+      color: var(--muted);
+    }
+    .log-row .log-ts  { color: #3a4050; width: 70px; flex-shrink: 0; }
+    .log-row .log-id  { color: var(--accent); width: 28px; }
+    .log-row .log-msg { flex: 1; }
+
+    /* ── Bottom bar ─────────────────────────────────────────────────── */
+    .bottom-bar {
+      grid-column: 1 / -1;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 6px 12px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      font-size: 11px;
+      color: var(--muted);
+    }
+    #fps-display { color: var(--accent); }
+    #frame-display { color: var(--text); }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>⚠ Construction Site PPE Safety Monitor</h1>
+  <div style="display:flex;align-items:center;gap:10px">
+    <span style="font-size:11px;color:var(--muted)">LIVE</span>
+    <div id="status-dot"></div>
+  </div>
+</header>
+
+<div class="grid">
+
+  <!-- ── Video feed ── -->
+  <div class="video-wrap">
+    <span class="video-label">CCTV FEED — LIVE</span>
+    <img id="video" src="/video_feed" alt="Live feed" />
+  </div>
+
+  <!-- ── KPI row ── -->
+  <div class="kpi-row" style="grid-column:2;grid-row:1">
+    <div class="kpi">
+      <div class="kpi-label">Workers</div>
+      <div class="kpi-value" id="kpi-workers">—</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Violations</div>
+      <div class="kpi-value bad" id="kpi-violations">—</div>
+    </div>
+  </div>
+
+  <!-- ── Side panels ── -->
+  <div class="side" style="grid-column:2;grid-row:2">
+
+    <!-- Compliance gauge -->
+    <div class="panel">
+      <div class="panel-title">Compliance Rate</div>
+      <div id="gauge-wrap">
+        <div id="gauge-value" class="good">—%</div>
+        <div style="font-size:10px;color:var(--muted);margin-bottom:8px">This session</div>
+        <div class="gauge-bar-bg">
+          <div id="gauge-bar" style="width:0%;background:var(--green)"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Active violations -->
+    <div class="panel" style="flex:1;min-height:160px">
+      <div class="panel-title">Active Violations</div>
+      <div id="viol-list">
+        <div style="color:var(--muted);font-size:11px;padding:8px 0">No violations detected</div>
+      </div>
+    </div>
+
+    <!-- Recent log -->
+    <div class="panel">
+      <div class="panel-title">Event Log</div>
+      <div id="log-list"></div>
+    </div>
+
+  </div>
+
+  <!-- ── Bottom bar ── -->
+  <div class="bottom-bar">
+    <span>FPS: <span id="fps-display">—</span></span>
+    <span id="frame-display">Frame: —</span>
+    <span id="clock">—</span>
+  </div>
+
+</div>
+
+<script>
+  const $ = id => document.getElementById(id);
+
+  // ── Poll API every 800 ms ──────────────────────────────────────────
+  async function pollStats() {
+    try {
+      const [statsRes, violRes] = await Promise.all([
+        fetch("/api/stats"),
+        fetch("/api/violations"),
+      ]);
+      const stats = await statsRes.json();
+      const viols = await violRes.json();
+      updateKPI(stats);
+      updateViolations(viols);
+    } catch(e) { /* stream not ready */ }
+  }
+
+  function updateKPI(s) {
+    $("kpi-workers").textContent   = s.total_workers ?? "—";
+    $("kpi-violations").textContent = s.violations   ?? "—";
+    $("fps-display").textContent   = s.fps            ?? "—";
+    $("frame-display").textContent = `Frame: ${s.frame_no ?? "—"}`;
+
+    const pct = s.compliance_pct ?? 100;
+    const gv  = $("gauge-value");
+    gv.textContent = pct + "%";
+    gv.className   = pct >= 80 ? "good" : pct >= 50 ? "warn" : "bad";
+
+    const bar = $("gauge-bar");
+    bar.style.width      = pct + "%";
+    bar.style.background = pct >= 80 ? "var(--green)" : pct >= 50 ? "var(--amber)" : "var(--red)";
+  }
+
+  const logBuffer = [];
+  function updateViolations(viols) {
+    const list = $("viol-list");
+    if (!viols.length) {
+      list.innerHTML = '<div style="color:var(--muted);font-size:11px;padding:8px 0">✓ All workers compliant</div>';
+      return;
+    }
+    list.innerHTML = viols.map(v => `
+      <div class="viol-row">
+        <span class="badge ${v.severity}">${v.severity}</span>
+        <span class="viol-worker">W${v.worker_id}</span>
+        <span class="viol-type">${v.type}</span>
+        <span class="viol-dur">${v.duration}s</span>
+      </div>
+    `).join("");
+
+    // Push to log
+    viols.forEach(v => {
+      const ts = new Date().toTimeString().slice(0,8);
+      logBuffer.unshift({ ts, id: v.worker_id, msg: `${v.type} — ${v.zone}` });
+    });
+    if (logBuffer.length > 40) logBuffer.length = 40;
+    $("log-list").innerHTML = logBuffer.slice(0, 20).map(r => `
+      <div class="log-row">
+        <span class="log-ts">${r.ts}</span>
+        <span class="log-id">W${r.id}</span>
+        <span class="log-msg">${r.msg}</span>
+      </div>
+    `).join("");
+  }
+
+  // ── Clock ──────────────────────────────────────────────────────────
+  function tick() {
+    $("clock").textContent = new Date().toLocaleTimeString();
+  }
+
+  setInterval(pollStats, 800);
+  setInterval(tick, 1000);
+  tick();
+  pollStats();
+</script>
+</body>
+</html>
