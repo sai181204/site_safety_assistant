@@ -44,7 +44,7 @@ function capture() {
     })
     .then(res => res.json())
     .then(data => {
-        alert("Result: " + data.result);
+        alert(data.result.join("\n"));
     });
 }
 </script>
